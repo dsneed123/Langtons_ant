@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use minifb::{Key, Window, WindowOptions};
 use rand::Rng;
 const GRID_SIZE: usize = 101; // Grid dimensions (101x101)
@@ -74,6 +76,38 @@ impl LangtonsAnt {
         }
     }
 }
+fn draw_grid(buffer: &mut [u32], ants: &[LangtonsAnt], zoom_level: usize) {
+    for y in 0..GRID_SIZE {
+        for x in 0..GRID_SIZE {
+            let mut color = 0x000000;
+            for ant in ants {
+                if ant.grid[y][x] {
+                    color = 0xFFFFFF;
+                    break;
+                }
+            }
+            for cy in 0..zoom_level {
+                for cx in 0..zoom_level {
+                    let buffer_x = x * zoom_level + cx;
+                    let buffer_y = y * zoom_level + cy;
+                    if buffer_x < WIDTH && buffer_y < HEIGHT {
+                        buffer[buffer_y * WIDTH + buffer_x] = color;
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn initialize_ants(num_ants: usize, grid_size: usize) -> Vec<LangtonsAnt> {
+    (0..num_ants).map(|_| LangtonsAnt::new(grid_size)).collect()
+}
+
+fn perform_steps(ants: &mut [LangtonsAnt]) {
+    for ant in ants {
+        ant.step();
+    }
+}
 
 fn main() {
     let mut window = Window::new(
@@ -86,31 +120,26 @@ fn main() {
         panic!("Failed to create window: {}", e);
     });
 
-    // Limit the update rate to ~60 FPS
-    window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
+    window.limit_update_rate(Some(Duration::from_micros(16600)));
 
     let mut buffer = vec![0u32; WIDTH * HEIGHT];
-    let mut ant1 = LangtonsAnt::new(GRID_SIZE);
-    let mut ant2 = LangtonsAnt::new(GRID_SIZE);
+    let mut ants = initialize_ants(10, GRID_SIZE); // Change the number of ants here
+
+    let mut zoom_level = 1;
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        // Perform one step of the simulation for both ants
-        ant1.step();
-        ant2.step();
-
-        // Draw the grid
-        for y in 0..GRID_SIZE {
-            for x in 0..GRID_SIZE {
-                let color = if ant1.grid[y][x] || ant2.grid[y][x] { 0xFFFFFF } else { 0x000000 };
-                for cy in 0..CELL_SIZE {
-                    for cx in 0..CELL_SIZE {
-                        buffer[(y * CELL_SIZE + cy) * WIDTH + (x * CELL_SIZE + cx)] = color;
-                    }
-                }
+        if window.is_key_down(Key::Equal) {
+            zoom_level += 1;
+        }
+        if window.is_key_down(Key::Minus) {
+            if zoom_level > 1 {
+                zoom_level -= 1;
             }
         }
 
-        // Update the window with the buffer
+        perform_steps(&mut ants);
+        draw_grid(&mut buffer, &ants, zoom_level);
+
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
 }
