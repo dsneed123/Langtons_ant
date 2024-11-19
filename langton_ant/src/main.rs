@@ -76,7 +76,7 @@ impl LangtonsAnt {
         }
     }
 }
-fn draw_grid(buffer: &mut [u32], ants: &[LangtonsAnt], zoom_level: usize) {
+fn draw_grid(buffer: &mut [u32], ants: &[LangtonsAnt]) {
     for y in 0..GRID_SIZE {
         for x in 0..GRID_SIZE {
             let mut color = 0x000000;
@@ -86,10 +86,10 @@ fn draw_grid(buffer: &mut [u32], ants: &[LangtonsAnt], zoom_level: usize) {
                     break;
                 }
             }
-            for cy in 0..zoom_level {
-                for cx in 0..zoom_level {
-                    let buffer_x = x * zoom_level + cx;
-                    let buffer_y = y * zoom_level + cy;
+            for cy in 0..CELL_SIZE {
+                for cx in 0..CELL_SIZE {
+                    let buffer_x = x * CELL_SIZE + cx;
+                    let buffer_y = y * CELL_SIZE + cy;
                     if buffer_x < WIDTH && buffer_y < HEIGHT {
                         buffer[buffer_y * WIDTH + buffer_x] = color;
                     }
@@ -123,22 +123,12 @@ fn main() {
     window.limit_update_rate(Some(Duration::from_micros(16600)));
 
     let mut buffer = vec![0u32; WIDTH * HEIGHT];
-    let mut ants = initialize_ants(10, GRID_SIZE); // Change the number of ants here
-
-    let mut zoom_level = 1;
+    let mut ants = initialize_ants(1, GRID_SIZE); // Change the number of ants here
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        if window.is_key_down(Key::Equal) {
-            zoom_level += 1;
-        }
-        if window.is_key_down(Key::Minus) {
-            if zoom_level > 1 {
-                zoom_level -= 1;
-            }
-        }
-
         perform_steps(&mut ants);
-        draw_grid(&mut buffer, &ants, zoom_level);
+        buffer.fill(0); // Clear the buffer before drawing
+        draw_grid(&mut buffer, &ants);
 
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
