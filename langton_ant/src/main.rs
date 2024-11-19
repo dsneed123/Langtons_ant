@@ -1,5 +1,5 @@
 use minifb::{Key, Window, WindowOptions};
-
+use rand::Rng;
 const GRID_SIZE: usize = 101; // Grid dimensions (101x101)
 const CELL_SIZE: usize = 5;  // Pixel size of each cell
 const WIDTH: usize = GRID_SIZE * CELL_SIZE; // Window width
@@ -22,10 +22,13 @@ struct LangtonsAnt {
 
 impl LangtonsAnt {
     fn new(grid_size: usize) -> Self {
-        LangtonsAnt {
+        let mut rng = rand::thread_rng();
+        let x = rng.gen_range(0..grid_size);
+        let y = rng.gen_range(0..grid_size);
+        Self {
             grid: vec![vec![false; grid_size]; grid_size],
-            x: grid_size / 2,
-            y: grid_size / 2,
+            x,
+            y,
             direction: Direction::Up,
         }
     }
@@ -87,32 +90,23 @@ fn main() {
     window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
 
     let mut buffer = vec![0u32; WIDTH * HEIGHT];
-    let mut ant = LangtonsAnt::new(GRID_SIZE);
+    let mut ant1 = LangtonsAnt::new(GRID_SIZE);
+    let mut ant2 = LangtonsAnt::new(GRID_SIZE);
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        // Perform one step of the simulation
-        ant.step();
+        // Perform one step of the simulation for both ants
+        ant1.step();
+        ant2.step();
 
         // Draw the grid
         for y in 0..GRID_SIZE {
             for x in 0..GRID_SIZE {
-                let color = if ant.grid[y][x] { 0xFFFFFF } else { 0x000000 };
+                let color = if ant1.grid[y][x] || ant2.grid[y][x] { 0xFFFFFF } else { 0x000000 };
                 for cy in 0..CELL_SIZE {
                     for cx in 0..CELL_SIZE {
-                        let px = x * CELL_SIZE + cx;
-                        let py = y * CELL_SIZE + cy;
-                        buffer[py * WIDTH + px] = color;
+                        buffer[(y * CELL_SIZE + cy) * WIDTH + (x * CELL_SIZE + cx)] = color;
                     }
                 }
-            }
-        }
-
-        // Draw the ant
-        for cy in 0..CELL_SIZE {
-            for cx in 0..CELL_SIZE {
-                let px = ant.x * CELL_SIZE + cx;
-                let py = ant.y * CELL_SIZE + cy;
-                buffer[py * WIDTH + px] = 0xFF0000; // Red color for the ant
             }
         }
 
