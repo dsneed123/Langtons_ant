@@ -1,7 +1,7 @@
 use std::time::Duration;
-
 use minifb::{Key, Window, WindowOptions};
 use rand::Rng;
+
 const GRID_SIZE: usize = 101; // Grid dimensions (101x101)
 const CELL_SIZE: usize = 5;  // Pixel size of each cell
 const WIDTH: usize = GRID_SIZE * CELL_SIZE; // Window width
@@ -76,6 +76,7 @@ impl LangtonsAnt {
         }
     }
 }
+
 fn draw_grid(buffer: &mut [u32], ants: &[LangtonsAnt]) {
     for y in 0..GRID_SIZE {
         for x in 0..GRID_SIZE {
@@ -123,9 +124,13 @@ fn main() {
     window.limit_update_rate(Some(Duration::from_micros(16600)));
 
     let mut buffer = vec![0u32; WIDTH * HEIGHT];
-    let mut ants = initialize_ants(1, GRID_SIZE); // Change the number of ants here
+    let mut ants = initialize_ants(3, GRID_SIZE); // Change the number of ants here
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
+        if window.is_key_down(Key::Enter) {
+            ants = initialize_ants(3, GRID_SIZE); // Reinitialize the ants
+        }
+
         perform_steps(&mut ants);
         buffer.fill(0); // Clear the buffer before drawing
         draw_grid(&mut buffer, &ants);
